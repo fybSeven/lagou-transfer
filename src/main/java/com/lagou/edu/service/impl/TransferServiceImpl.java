@@ -2,6 +2,7 @@ package com.lagou.edu.service.impl;
 
 import com.lagou.edu.annotation.Autowired;
 import com.lagou.edu.annotation.Service;
+import com.lagou.edu.annotation.Transactional;
 import com.lagou.edu.dao.AccountDao;
 import com.lagou.edu.pojo.Account;
 import com.lagou.edu.service.TransferService;
@@ -29,6 +30,7 @@ public class TransferServiceImpl implements TransferService {
 
 
     @Override
+    @Transactional("proxyFactory")
     public void transfer(String fromCardNo, String toCardNo, int money) throws Exception {
 
         /*try{

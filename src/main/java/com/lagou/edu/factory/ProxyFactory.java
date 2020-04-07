@@ -1,5 +1,6 @@
 package com.lagou.edu.factory;
 
+import com.lagou.edu.annotation.Autowired;
 import com.lagou.edu.annotation.Service;
 import com.lagou.edu.utils.TransactionManager;
 import net.sf.cglib.proxy.Enhancer;
@@ -20,6 +21,7 @@ import java.lang.reflect.Proxy;
 public class ProxyFactory {
 
 
+    @Autowired("transactionManager")
     private TransactionManager transactionManager;
 
     public void setTransactionManager(TransactionManager transactionManager) {

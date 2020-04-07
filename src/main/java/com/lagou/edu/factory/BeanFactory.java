@@ -3,9 +3,11 @@ package com.lagou.edu.factory;
 import com.lagou.edu.annotation.Autowired;
 import com.lagou.edu.annotation.Repository;
 import com.lagou.edu.annotation.Service;
+import com.lagou.edu.annotation.Transactional;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,24 +36,40 @@ public class BeanFactory {
             e.printStackTrace();
         }
         for (Map.Entry<String,Object> entry : map.entrySet()){
-            Object obj = entry.getValue();
-            Field[] fields = obj.getClass().getDeclaredFields();
-            for (Field field : fields) {
-                Autowired annotation = field.getAnnotation(Autowired.class);
-                if (annotation != null){
-                    Object o = map.get(annotation.value());
-                    System.out.println("注解类" + o);
-                    System.out.println(obj);
-                    field.setAccessible(true);
-                    try {
-                        field.set(obj, o);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
+            autoWrite(entry);
+            proxy(entry);
+        }
+    }
+
+    private static void proxy(Map.Entry<String,Object> entry){
+        Object obj = entry.getValue();
+        Method[] methods = obj.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+            Transactional transactional = method.getAnnotation(Transactional.class);
+            if (transactional != null){
+                ProxyFactory proxyFactory = (ProxyFactory) map.get(transactional.value());
+                Object jdkProxy = proxyFactory.getJdkProxy(obj);
+                map.put(entry.getKey(), jdkProxy);
+            }
+        }
+    }
+
+    private static void autoWrite(Map.Entry<String,Object> entry){
+        Object obj = entry.getValue();
+        Field[] fields = obj.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            Autowired annotation = field.getAnnotation(Autowired.class);
+            if (annotation != null){
+                Object o = map.get(annotation.value());
+                field.setAccessible(true);
+                try {
+                    field.set(obj, o);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
                 }
             }
-            map.put(entry.getKey(), obj);
         }
+        map.put(entry.getKey(), obj);
     }
 
     private static void getClassFileName(File files, String directoryName) throws Exception {

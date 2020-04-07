@@ -1,5 +1,6 @@
 package com.lagou.edu.utils;
 
+import com.lagou.edu.annotation.Autowired;
 import com.lagou.edu.annotation.Service;
 
 import java.sql.SQLException;
@@ -12,6 +13,7 @@ import java.sql.SQLException;
 @Service("transactionManager")
 public class TransactionManager {
 
+    @Autowired("connectionUtils")
     private ConnectionUtils connectionUtils;
 
     public void setConnectionUtils(ConnectionUtils connectionUtils) {
