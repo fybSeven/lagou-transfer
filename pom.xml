@@ -62,6 +62,11 @@
       <artifactId>dom4j</artifactId>
       <version>1.6.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>1.1.23</version>
+    </dependency>
     <!--xpath表达式依赖-->
     <dependency>
       <groupId>jaxen</groupId>

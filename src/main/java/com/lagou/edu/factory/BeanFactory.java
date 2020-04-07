@@ -1,15 +1,12 @@
 package com.lagou.edu.factory;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
+import com.lagou.edu.annotation.Autowired;
+import com.lagou.edu.annotation.Repository;
+import com.lagou.edu.annotation.Service;
 
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.File;
+import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,71 +25,78 @@ public class BeanFactory {
 
 
     static {
-        // 任务一：读取解析xml，通过反射技术实例化对象并且存储待用（map集合）
-        // 加载xml
-        InputStream resourceAsStream = BeanFactory.class.getClassLoader().getResourceAsStream("beans.xml");
-        // 解析xml
-        SAXReader saxReader = new SAXReader();
+        // 获取到项目的根路径
+        String path = System.getProperty("user.dir") + "\\src" + "\\main" + "\\java";
+        File files = new File(path);
         try {
-            Document document = saxReader.read(resourceAsStream);
-            Element rootElement = document.getRootElement();
-            List<Element> beanList = rootElement.selectNodes("//bean");
-            for (int i = 0; i < beanList.size(); i++) {
-                Element element =  beanList.get(i);
-                // 处理每个bean元素，获取到该元素的id 和 class 属性
-                String id = element.attributeValue("id");        // accountDao
-                String clazz = element.attributeValue("class");  // com.lagou.edu.dao.impl.JdbcAccountDaoImpl
-                // 通过反射技术实例化对象
-                Class<?> aClass = Class.forName(clazz);
-                Object o = aClass.newInstance();  // 实例化之后的对象
-
-                // 存储到map中待用
-                map.put(id,o);
-
-            }
-
-            // 实例化完成之后维护对象的依赖关系，检查哪些对象需要传值进入，根据它的配置，我们传入相应的值
-            // 有property子元素的bean就有传值需求
-            List<Element> propertyList = rootElement.selectNodes("//property");
-            // 解析property，获取父元素
-            for (int i = 0; i < propertyList.size(); i++) {
-                Element element =  propertyList.get(i);   //<property name="AccountDao" ref="accountDao"></property>
-                String name = element.attributeValue("name");
-                String ref = element.attributeValue("ref");
-
-                // 找到当前需要被处理依赖关系的bean
-                Element parent = element.getParent();
-
-                // 调用父元素对象的反射功能
-                String parentId = parent.attributeValue("id");
-                Object parentObject = map.get(parentId);
-                // 遍历父对象中的所有方法，找到"set" + name
-                Method[] methods = parentObject.getClass().getMethods();
-                for (int j = 0; j < methods.length; j++) {
-                    Method method = methods[j];
-                    if(method.getName().equalsIgnoreCase("set" + name)) {  // 该方法就是 setAccountDao(AccountDao accountDao)
-                        method.invoke(parentObject,map.get(ref));
-                    }
-                }
-
-                // 把处理之后的parentObject重新放到map中
-                map.put(parentId,parentObject);
-
-            }
-
-
-        } catch (DocumentException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+            getClassFileName(files, "");
+        } catch (Exception e) {
             e.printStackTrace();
         }
+        for (Map.Entry<String,Object> entry : map.entrySet()){
+            Object obj = entry.getValue();
+            Field[] fields = obj.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                Autowired annotation = field.getAnnotation(Autowired.class);
+                if (annotation != null){
+                    Object o = map.get(annotation.value());
+                    System.out.println("注解类" + o);
+                    System.out.println(obj);
+                    field.setAccessible(true);
+                    try {
+                        field.set(obj, o);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            map.put(entry.getKey(), obj);
+        }
+    }
 
+    private static void getClassFileName(File files, String directoryName) throws Exception {
+        if (files != null) {
+            if (directoryName == null) {
+                directoryName = "";
+            }
+            String name = null;
+            File[] listFiles = files.listFiles();
+            if (listFiles != null) {
+                for (int i = 0; i < listFiles.length; i++) {
+                    if (listFiles[i].isDirectory()) {
+                        // 为目录
+                        name = listFiles[i].getName();
+                        File files2 = new File(files.getPath() + "\\" + name);
+                        if(directoryName.equals("")){
+                            getClassFileName(files2, directoryName + name);
+                        }else{
+                            getClassFileName(files2, directoryName + "." + name);
+                        }
+                    } else {
+                        // 不为目录
+                        name = listFiles[i].getName();
+                        name = name.substring(0, name.lastIndexOf("."));
+                        if(directoryName.equals("")){
+                            setMap(directoryName + name);
+                        }else{
+                            setMap(directoryName + "." + name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void setMap(String name) throws Exception{
+        Class clazz = Class.forName(name);
+        //查找此类上是否有此注解
+        Service service = (Service) clazz.getAnnotation(Service.class);
+        Repository repository = (Repository) clazz.getAnnotation(Repository.class);
+        if(service != null){
+            map.put(service.value(), clazz.newInstance());
+        }else if (repository != null){
+            map.put(repository.value(), clazz.newInstance());
+        }
     }
 
 

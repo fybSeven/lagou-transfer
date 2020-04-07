@@ -1,5 +1,7 @@
 package com.lagou.edu.utils;
 
+import com.lagou.edu.annotation.Service;
+
 import java.sql.SQLException;
 
 /**
@@ -7,6 +9,7 @@ import java.sql.SQLException;
  *
  * 事务管理器类：负责手动事务的开启、提交、回滚
  */
+@Service("transactionManager")
 public class TransactionManager {
 
     private ConnectionUtils connectionUtils;

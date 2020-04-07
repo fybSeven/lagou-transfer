@@ -1,9 +1,10 @@
 package com.lagou.edu.dao.impl;
 
-import com.lagou.edu.pojo.Account;
+import com.lagou.edu.annotation.Autowired;
+import com.lagou.edu.annotation.Repository;
 import com.lagou.edu.dao.AccountDao;
+import com.lagou.edu.pojo.Account;
 import com.lagou.edu.utils.ConnectionUtils;
-import com.lagou.edu.utils.DruidUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,8 +13,10 @@ import java.sql.ResultSet;
 /**
  * @author 应癫
  */
+@Repository("accountDao")
 public class JdbcAccountDaoImpl implements AccountDao {
 
+    @Autowired("connectionUtils")
     private ConnectionUtils connectionUtils;
 
     public void setConnectionUtils(ConnectionUtils connectionUtils) {
